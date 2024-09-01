@@ -10,6 +10,8 @@
 #include <optional>
 #include <sstream>
 
+
+
 namespace ASTImpl {
 
 enum ExprPrecedence {
@@ -72,7 +74,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(const SheetInterface* sheet) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +144,33 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const SheetInterface* sheet) const override {
+        double out = 0.;
+        const FormulaError::Category ArithmeticError = FormulaError::Category::Arithmetic;
+
+        switch (type_)
+        {
+        case (Type::Add):
+            out = lhs_->Evaluate(sheet) + rhs_->Evaluate(sheet);
+            break;
+        case (Type::Subtract):
+            out = lhs_->Evaluate(sheet) - rhs_->Evaluate(sheet);
+            break;
+        case (Type::Multiply):
+            out = lhs_->Evaluate(sheet) * rhs_->Evaluate(sheet);
+            break;
+        case (Type::Divide):
+            if (-0.0000001 < rhs_->Evaluate(sheet) && rhs_->Evaluate(sheet) < 0.0000001) { throw FormulaError(ArithmeticError); // throw FormulaError("ARITHM");
+        }
+            out = lhs_->Evaluate(sheet) / rhs_->Evaluate(sheet);
+            break;
+        default:
+            break;
+        }
+        if (!std::isfinite(out)) { throw FormulaError(ArithmeticError); }//throw FormulaError("ARITHM"); }
+
+
+        return out;
     }
 
 private:
@@ -180,8 +207,14 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const SheetInterface* sheet ) const override {///////////////////
+        if (type_ == UnaryMinus) {
+            return -(operand_->Evaluate(sheet));
+        }
+        else
+        {
+            return operand_->Evaluate(sheet);
+        }
     }
 
 private:
@@ -211,8 +244,36 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // реализуйте метод.
+    double Evaluate(const SheetInterface* sheet) const override {
+        auto cell = sheet->GetCell(*cell_);
+        if (cell == nullptr) { return 0; }
+        const FormulaError::Category ValueError = FormulaError::Category::Value;
+
+        CellInterface::Value val = cell->GetValue();
+        
+
+        if (std::holds_alternative<double>(val)) {
+            return std::get<double>(val);
+        }
+        else if (std::holds_alternative<std::string>(val)) {
+            try {
+                size_t pos;
+                std::string_view str = std::get<std::string>(val);
+                double  val = std::stod(str.data(), &pos);
+                if (pos != str.length()) {
+                    throw FormulaError(ValueError);
+                }
+                    return val;
+            }
+            catch (const std::exception&){
+            throw FormulaError(ValueError);
+            }
+        }
+        else if (std::holds_alternative<FormulaError>(val)) {
+            throw std::get<FormulaError>(val);
+        }
+
+        return std::get<double>(val);
     }
 
 private:
@@ -237,7 +298,7 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+    double Evaluate(const SheetInterface* sheet) const override {////////////////////
         return value_;
     }
 
@@ -391,8 +452,8 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+double FormulaAST::Execute(const SheetInterface& sheet) const {///////////////////
+    return root_expr_->Evaluate(&sheet);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)

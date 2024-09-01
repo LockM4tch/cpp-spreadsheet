@@ -23,8 +23,8 @@ public:
     FormulaAST& operator=(FormulaAST&&) = default;
     ~FormulaAST();
 
-    double Execute(/*добавьте нужные аргументы*/ args) const;
-    void PrintCells(std::ostream& out) const;
+    double Execute(const SheetInterface& sheet) const;
+    void PrintCells(std::ostream& out) const;/////////////////
     void Print(std::ostream& out) const;
     void PrintFormula(std::ostream& out) const;
 

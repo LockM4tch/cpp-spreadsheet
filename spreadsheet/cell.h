@@ -2,35 +2,81 @@
 
 #include "common.h"
 #include "formula.h"
-
-#include <functional>
+#include <memory>
 #include <unordered_set>
 
-class Sheet;
 
-class Cell : public CellInterface {
+
+using Value = CellInterface::Value;
+
+class Impl {
 public:
-    Cell(Sheet& sheet);
-    ~Cell();
 
-    void Set(std::string text);
-    void Clear();
+    virtual Value GetValue() const = 0;
+    virtual std::string GetText() const = 0;
+
+    virtual ~Impl() = default;
+};
+
+class EmptyImpl : public Impl {
+public:
 
     Value GetValue() const override;
     std::string GetText() const override;
-    std::vector<Position> GetReferencedCells() const override;
+};
 
-    bool IsReferenced() const;
+class TextImpl : public Impl {
+public:
+
+    explicit TextImpl(std::string text);
+    Value GetValue() const override;
+    std::string GetText() const override;
 
 private:
-    class Impl;
-    class EmptyImpl;
-    class TextImpl;
-    class FormulaImpl;
+    std::string text_;
+};
 
+class FormulaImpl : public Impl {
+public:
+
+    explicit FormulaImpl(std::string text, SheetInterface& sheet, std::vector<Position>& ref);
+    Value GetValue() const override;
+    std::string GetText() const override;
+
+
+private:
+    std::unique_ptr<FormulaInterface> formula_ptr_;
+    SheetInterface& sheet_;
+};
+
+class Cell : public CellInterface {
+public:
+    Cell(SheetInterface& sheet);
+    ~Cell();
+
+    void Set(std::string text);
+
+    void Clear();
+
+    Value GetValue() const override;
+
+    std::string GetText() const override;
+
+    std::vector<Position> GetReferencedCells() const override;
+private:
+    enum class State { WHITE, GREY, BLACK };
+    State checkState = State::WHITE;
+
+    void RevertState(std::unordered_set<Cell*>& allReferenced);
+    void CheckForCycleDepeendancy(std::vector<Position>& referenceCells, std::unordered_set<Cell*>& allReferenced);
+
+    bool isCahed_;
+    Value cahcedValue_;
+
+    SheetInterface& sheet_;
     std::unique_ptr<Impl> impl_;
 
-    // Добавьте поля и методы для связи с таблицей, проверки циклических 
-    // зависимостей, графа зависимостей и т. д.
+    std::vector<Position> referenceCells_;
 
 };
+
