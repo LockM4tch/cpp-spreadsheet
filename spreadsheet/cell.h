@@ -69,14 +69,17 @@ private:
 
     void RevertState(std::unordered_set<Cell*>& allReferenced);
     void CheckForCycleDepeendancy(std::vector<Position>& referenceCells, std::unordered_set<Cell*>& allReferenced);
-
-    bool isCahed_;
-    Value cahcedValue_;
+   
+    void RemoveAsParent();
+    void AddAsParent();
 
     SheetInterface& sheet_;
     std::unique_ptr<Impl> impl_;
 
     std::vector<Position> referenceCells_;
+    std::vector<Cell*> parentCells_;
 
+    bool isCahed_;
+    Value cahcedValue_;
 };
 

@@ -80,6 +80,7 @@ void Sheet::ClearCell(Position pos) {
 
     auto& currentCell = sheet_[row][col];
     if (currentCell != nullptr) {
+        currentCell->Clear();
         currentCell.reset(nullptr);
         printable_.deliteFromRow(row).deliteFromColumn(col);
     }

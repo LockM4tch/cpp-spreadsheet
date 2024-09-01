@@ -6,9 +6,26 @@
 #include <optional>
 
 //---------------cell--------------------------
-Cell::Cell(SheetInterface& sheet) : sheet_(sheet), impl_(new EmptyImpl{}) {}
+Cell::Cell(SheetInterface& sheet) : sheet_(sheet), impl_(new EmptyImpl{}), isCahed_(false) {}
 
 Cell::~Cell() {}
+
+void Cell::RemoveAsParent() {
+	for (auto child : referenceCells_) {
+		auto parentList = dynamic_cast<Cell*>(sheet_.GetCell(child))->parentCells_;
+		auto it = std::find(parentList.begin(), parentList.end(), this);
+		parentList.erase(it);
+	}
+}
+void Cell::AddAsParent() {
+	for (auto child : referenceCells_){
+		auto childptr = sheet_.GetCell(child);
+		if (childptr == nullptr) { sheet_.SetCell(child,""); 
+		childptr = sheet_.GetCell(child);
+		}
+		dynamic_cast<Cell*>(childptr)->parentCells_.push_back(this);
+	}
+}
 
 void Cell::Set(std::string text) {
 	std::vector<Position> referenceCells;
@@ -32,12 +49,16 @@ void Cell::Set(std::string text) {
 		impl_.reset(new TextImpl(text));
 	}
 
+	for (auto parent : parentCells_){
+		dynamic_cast<Cell*>(parent)->isCahed_ = false;
+	}
+
+	RemoveAsParent();
 	referenceCells_ = referenceCells;
+	AddAsParent();
 	cahcedValue_ = impl_->GetValue();
-	isCahed_ = true;
+	isCahed_=true;
 }
-
-
 
 void Cell::RevertState(std::unordered_set<Cell*>& allReferenced) {
 	for (auto cell : allReferenced) {
@@ -72,14 +93,14 @@ std::vector<Position> Cell::GetReferencedCells() const {
 	return referenceCells_;
 }
 
-
 void Cell::Clear() {
+	RemoveAsParent();
 	impl_.reset(new EmptyImpl{});
 }
 
 Cell::Value Cell::GetValue() const
 {
-	if (!isCahed_) {
+	if (isCahed_) {
 		return cahcedValue_;
 	}
 	return impl_->GetValue();

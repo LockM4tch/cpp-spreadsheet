@@ -356,6 +356,29 @@ namespace {
 
 
     void TestCahe() {
+        auto sheet = CreateSheet();
+        sheet->SetCell("A1"_pos, "=A2");
+        std::ostringstream val1;
+        sheet->PrintValues(val1);
+        ASSERT_EQUAL(val1.str(), "0\n");
+
+        sheet->SetCell("A2"_pos, "=A3");
+        std::ostringstream val2;
+        sheet->PrintValues(val2);
+        ASSERT_EQUAL(val2.str(), "0\n0\n");
+
+
+
+        sheet->SetCell("A3"_pos, "=A4");
+        sheet->SetCell("A4"_pos, "=0");
+
+
+        
+
+        std::ostringstream val3;
+        sheet->PrintValues(val3);
+        ASSERT_EQUAL(val3.str(), "0\n0\n0\n0\n");
+
 
     }
 }  // namespace
