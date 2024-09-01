@@ -50,14 +50,14 @@ void Cell::Set(std::string text) {
 	}
 
 	for (auto parent : parentCells_){
-		dynamic_cast<Cell*>(parent)->isCahed_ = false;
+		parent->isCahed_ = false;
 	}
 
 	RemoveAsParent();
 	referenceCells_ = referenceCells;
 	AddAsParent();
 	cahcedValue_ = impl_->GetValue();
-	isCahed_=true;
+	isCahed_ = true;
 }
 
 void Cell::RevertState(std::unordered_set<Cell*>& allReferenced) {

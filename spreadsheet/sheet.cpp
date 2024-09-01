@@ -33,12 +33,15 @@ void Sheet::SetCell(Position pos, std::string text) {
     if (col >= sheet_[row].size()) {
         sheet_[row].resize(col + 1);
     }
+
     auto& currentCell = sheet_[row][col];
+
     if (currentCell == nullptr) {
         printable_.addToRow(row).addToColumn(col);
         currentCell.reset(new Cell(*this));
     }
 
+    if (currentCell->GetText() == text) { return; }
     currentCell->Set(text);
 
     for (auto cell : currentCell->GetReferencedCells()) {

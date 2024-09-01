@@ -3,6 +3,7 @@
 #include "common.h"
 #include "formula.h"
 #include <memory>
+#include <algorithm>
 #include <unordered_set>
 
 

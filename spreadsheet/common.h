@@ -158,6 +158,7 @@ public:
     // соответственно. Пустая ячейка представляется пустой строкой в любом случае.
     virtual void PrintValues(std::ostream& output) const = 0;
     virtual void PrintTexts(std::ostream& output) const = 0;
+
 };
 
 // Создаёт готовую к работе пустую таблицу.
