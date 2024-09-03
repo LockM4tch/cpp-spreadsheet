@@ -147,29 +147,29 @@ public:
     double Evaluate(const SheetInterface* sheet) const override {
         double out = 0.;
         const FormulaError::Category ArithmeticError = FormulaError::Category::Arithmetic;
+        auto lhs = lhs_->Evaluate(sheet);
+        auto rhs = rhs_->Evaluate(sheet);
 
-        switch (type_)
-        {
-        case (Type::Add):
-            out = lhs_->Evaluate(sheet) + rhs_->Evaluate(sheet);
-            break;
-        case (Type::Subtract):
-            out = lhs_->Evaluate(sheet) - rhs_->Evaluate(sheet);
-            break;
-        case (Type::Multiply):
-            out = lhs_->Evaluate(sheet) * rhs_->Evaluate(sheet);
-            break;
-        case (Type::Divide):
-            if (-0.0000001 < rhs_->Evaluate(sheet) && rhs_->Evaluate(sheet) < 0.0000001) { throw FormulaError(ArithmeticError); // throw FormulaError("ARITHM");
-        }
-            out = lhs_->Evaluate(sheet) / rhs_->Evaluate(sheet);
-            break;
-        default:
-            break;
-        }
-        if (!std::isfinite(out)) { throw FormulaError(ArithmeticError); }//throw FormulaError("ARITHM"); }
-
-
+        switch (type_){
+            case (Type::Divide):
+                if (0.0000001 > std::abs(rhs)) { 
+                    throw FormulaError(ArithmeticError);
+                }
+                out = lhs / rhs;
+                break;
+            case (Type::Add):
+                out = lhs + rhs;
+                break;
+            case (Type::Subtract):
+                out = lhs - rhs;
+                break;
+            case (Type::Multiply):
+                out = lhs * rhs;
+                break;
+            default:
+                break;
+            }
+        if (!std::isfinite(out)) { throw FormulaError(ArithmeticError); }
         return out;
     }
 
@@ -207,13 +207,14 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(const SheetInterface* sheet ) const override {///////////////////
+    double Evaluate(const SheetInterface* sheet ) const override {
+        auto out = operand_->Evaluate(sheet);
         if (type_ == UnaryMinus) {
-            return -(operand_->Evaluate(sheet));
+            return -(out);
         }
         else
         {
-            return operand_->Evaluate(sheet);
+            return out;
         }
     }
 
