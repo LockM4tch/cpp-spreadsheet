@@ -107,7 +107,11 @@ public:
     // Возвращает список ячеек, которые непосредственно задействованы в данной
     // формуле. Список отсортирован по возрастанию и не содержит повторяющихся
     // ячеек. В случае текстовой ячейки список пуст.
-    virtual std::vector<Position> GetReferencedCells() const = 0;
+    virtual  std::vector<Position>& GetReferencedCells() = 0;
+    virtual  void AddParent(CellInterface* parent) = 0;
+    virtual  void RemoveParent(CellInterface* parent) = 0;
+    virtual void SetCahchedStatus(bool status) = 0;
+
 
     virtual void Set(std::string text) = 0;
     virtual void Clear() = 0;

@@ -3,6 +3,7 @@
 #include "common.h"
 #include "formula.h"
 #include <memory>
+#include <vector>
 #include <algorithm>
 #include <unordered_set>
 
@@ -62,9 +63,12 @@ public:
     Value GetValue() const override;
 
     std::string GetText() const override;
-
-    std::vector<Position> GetReferencedCells() const override;
+    
+    std::vector<Position>& GetReferencedCells() override;
 private:
+    void AddParent(CellInterface* parent) override;
+    void RemoveParent(CellInterface* parent) override;
+    void SetCahchedStatus(bool status) override;
     enum class State { WHITE, GREY, BLACK };
     State checkState = State::WHITE;
 
@@ -78,9 +82,9 @@ private:
     std::unique_ptr<Impl> impl_;
 
     std::vector<Position> referenceCells_;
-    std::vector<Cell*> parentCells_;
+    std::vector<CellInterface*> parentCells_;
 
-    bool isCahed_;
+    bool isCached_;
     Value cahcedValue_;
 };
 

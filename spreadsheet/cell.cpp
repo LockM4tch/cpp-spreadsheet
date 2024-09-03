@@ -6,15 +6,23 @@
 #include <optional>
 
 //---------------cell--------------------------
-Cell::Cell(SheetInterface& sheet) : sheet_(sheet), impl_(new EmptyImpl{}), isCahed_(false) {}
+Cell::Cell(SheetInterface& sheet) : sheet_(sheet), impl_(new EmptyImpl{}), isCached_(false) {}
 
 Cell::~Cell() {}
 
+
+void Cell::AddParent(CellInterface* parent) {
+	parentCells_.push_back(parent);
+
+}
+void  Cell::RemoveParent(CellInterface* parent) {
+	auto it = std::find(parentCells_.begin(), parentCells_.end(), parent);
+	parentCells_.erase(it);
+}
+
 void Cell::RemoveAsParent() {
 	for (auto child : referenceCells_) {
-		auto parentList = dynamic_cast<Cell*>(sheet_.GetCell(child))->parentCells_;
-		auto it = std::find(parentList.begin(), parentList.end(), this);
-		parentList.erase(it);
+		sheet_.GetCell(child)->RemoveParent(this);
 	}
 }
 void Cell::AddAsParent() {
@@ -23,9 +31,15 @@ void Cell::AddAsParent() {
 		if (childptr == nullptr) { sheet_.SetCell(child,""); 
 		childptr = sheet_.GetCell(child);
 		}
-		dynamic_cast<Cell*>(childptr)->parentCells_.push_back(this);
+		sheet_.GetCell(child)->AddParent(this);
+
 	}
 }
+
+void Cell::SetCahchedStatus(bool status) {
+	isCached_ = status;
+}
+
 
 void Cell::Set(std::string text) {
 	std::vector<Position> referenceCells;
@@ -50,14 +64,14 @@ void Cell::Set(std::string text) {
 	}
 
 	for (auto parent : parentCells_){
-		parent->isCahed_ = false;
+		parent->SetCahchedStatus(false);
 	}
 
 	RemoveAsParent();
 	referenceCells_ = referenceCells;
 	AddAsParent();
 	cahcedValue_ = impl_->GetValue();
-	isCahed_ = true;
+	isCached_ = true;
 }
 
 void Cell::RevertState(std::unordered_set<Cell*>& allReferenced) {
@@ -75,21 +89,21 @@ void Cell::CheckForCycleDepeendancy(std::vector<Position>& referenceCells, std::
 		return;
 	}
 
-	allReferenced.insert(dynamic_cast<Cell*>(this));
+	allReferenced.insert(static_cast<Cell*>(this));
 	checkState = State::GREY;
 
 	for (auto pos : referenceCells) {
 		auto cell = sheet_.GetCell(pos);
 		if (cell == nullptr) { continue; }
 		auto ref = cell->GetReferencedCells();
-		dynamic_cast<Cell*>(cell)->CheckForCycleDepeendancy(ref, allReferenced);
+		static_cast<Cell*>(cell)->CheckForCycleDepeendancy(ref, allReferenced);
 	}
 
 	checkState = State::BLACK;
 	return;
 }
 
-std::vector<Position> Cell::GetReferencedCells() const {
+ std::vector<Position>& Cell::GetReferencedCells() {
 	return referenceCells_;
 }
 
@@ -100,7 +114,7 @@ void Cell::Clear() {
 
 Cell::Value Cell::GetValue() const
 {
-	if (isCahed_) {
+	if (isCached_) {
 		return cahcedValue_;
 	}
 	return impl_->GetValue();
