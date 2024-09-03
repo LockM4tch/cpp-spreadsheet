@@ -147,24 +147,24 @@ public:
     double Evaluate(const SheetInterface* sheet) const override {
         double out = 0.;
         const FormulaError::Category ArithmeticError = FormulaError::Category::Arithmetic;
-        auto lhs = lhs_->Evaluate(sheet);
-        auto rhs = rhs_->Evaluate(sheet);
+        auto lhsValue = lhs_->Evaluate(sheet);
+        auto rhsValue = rhs_->Evaluate(sheet);
 
         switch (type_){
             case (Type::Divide):
-                if (0.0000001 > std::abs(rhs)) { 
+                if (0.0000001 > std::abs(rhsValue)) { 
                     throw FormulaError(ArithmeticError);
                 }
-                out = lhs / rhs;
+                out = lhsValue / rhsValue;
                 break;
             case (Type::Add):
-                out = lhs + rhs;
+                out = lhsValue + rhsValue;
                 break;
             case (Type::Subtract):
-                out = lhs - rhs;
+                out = lhsValue - rhsValue;
                 break;
             case (Type::Multiply):
-                out = lhs * rhs;
+                out = lhsValue * rhsValue;
                 break;
             default:
                 break;
@@ -208,13 +208,13 @@ public:
     }
 
     double Evaluate(const SheetInterface* sheet ) const override {
-        auto out = operand_->Evaluate(sheet);
+        auto value = operand_->Evaluate(sheet);
         if (type_ == UnaryMinus) {
-            return -(out);
+            return -(value);
         }
         else
         {
-            return out;
+            return value;
         }
     }
 
